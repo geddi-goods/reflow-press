@@ -169,6 +169,9 @@ select{background:var(--soft);height:35px}
         <div class="kv"><label for="dur">Transition</label><input type="range" id="dur" min="400" max="6000" step="100" value="2200"><output id="durO"></output></div>
         <div class="kv"><label for="hold">Hold</label><input type="range" id="hold" min="0" max="4000" step="100" value="1000"><output id="holdO"></output></div>
         <div class="kv"><label for="spd">Speed</label><input type="range" id="spd" min="0.25" max="2" step="0.25" value="1"><output id="spdO"></output></div>
+        <label class="chk"><input type="checkbox" id="easeJumps" checked> Ease breakpoint jumps</label>
+        <div class="kv"><label for="jumpDur">Jump ease</label><input type="range" id="jumpDur" min="100" max="1500" step="50" value="450"><output id="jumpDurO"></output></div>
+        <p class="note">Animates sizes that snap when the site crosses a breakpoint. Nicer for presenting, but smoother than the real site.</p>
       </div>
 
       <div class="panel sm">
@@ -302,6 +305,7 @@ function render(){
   document.documentElement.style.setProperty('--uh',uh+'px');document.documentElement.style.setProperty('--uf',Math.max(8,Math.min(12,uh*0.42))+'px');
   const f=$('frame'), vw=$('view'), sc=$('scaler');
   const W=Math.round(v.w), H=Math.round(v.h);
+  bpCross(W);
   f.style.width=(W*scale+2)+'px'; f.style.borderRadius=Math.max(2,v.r*scale)+'px';
   vw.style.width=(W*scale)+'px'; vw.style.height=(H*scale)+'px';
   sc.style.width=W+'px'; sc.style.height=H+'px'; sc.style.transform=`scale(${scale})`;
@@ -319,6 +323,24 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 
+/* ---------- ease breakpoint jumps ---------- */
+let lastBand=null, easeTimer=0;
+function bpCross(W){
+  const band=BPS.filter(b=>b<=W).length;
+  if(lastBand!==null&&band!==lastBand&&$('easeJumps').checked&&siteDoc){
+    try{
+      siteDoc.documentElement.classList.add('reflow-ease');
+      clearTimeout(easeTimer);
+      easeTimer=setTimeout(()=>{try{siteDoc&&siteDoc.documentElement.classList.remove('reflow-ease');}catch(e){}},+$('jumpDur').value+120);
+    }catch(e){}
+  }
+  lastBand=band;
+}
+$('jumpDur').addEventListener('input',()=>{$('jumpDurO').textContent=($('jumpDur').value/1000).toFixed(2)+' s';applyTypo();try{localStorage.setItem('reflow-jd',$('jumpDur').value);}catch(e){}});
+$('easeJumps').addEventListener('change',()=>{try{localStorage.setItem('reflow-ej',$('easeJumps').checked?'1':'0');}catch(e){}});
+try{const jd=localStorage.getItem('reflow-jd');if(jd)$('jumpDur').value=jd;const ej=localStorage.getItem('reflow-ej');if(ej)$('easeJumps').checked=ej==='1';}catch(e){}
+$('jumpDurO').textContent=($('jumpDur').value/1000).toFixed(2)+' s';
+
 /* ---------- site loading ---------- */
 let siteDoc=null;
 const uploaded=new Map(); // family -> ArrayBuffer
@@ -327,7 +349,7 @@ function loadSite(raw){
   $('urlIn').value=u.href;
   $('urlText').textContent=u.host.replace(/^www\./,'')+(u.pathname!=='/'?u.pathname:'');
   $('loading').textContent='Loading '+u.host+'…'; $('loading').classList.remove('off');
-  siteDoc=null; bigEl=null; BPS=[]; drawRuler();
+  siteDoc=null; bigEl=null; BPS=[]; lastBand=null; drawRuler();
   $('fonts').innerHTML='<p class="note" style="margin:0">Reading fonts…</p>';
   $('site').src = useProxy ? 'api/proxy?url='+encodeURIComponent(u.href) : u.href;
   try{localStorage.setItem('reflow-url',u.href);}catch(e){}
@@ -433,6 +455,8 @@ function applyTypo(){
     if(hy==='limit')css+='*{hyphenate-limit-chars:7 3 3!important}';
   }
   if($('bal').checked)css+='h1,h2,h3,h4,h5,h6,p{text-wrap:balance!important}';
+  const jd=+$('jumpDur').value;
+  css+=`html.reflow-ease *{transition-property:width,height,min-width,max-width,min-height,max-height,font-size,line-height,letter-spacing,word-spacing,padding,margin,gap,row-gap,column-gap,top,left,right,bottom,border-radius,flex-basis!important;transition-duration:${jd}ms!important;transition-delay:0s!important;transition-timing-function:cubic-bezier(.2,.75,.3,1)!important}`;
   st.textContent=css;
 }
 ['hy','bal'].forEach(id=>$(id).addEventListener('input',applyTypo));
