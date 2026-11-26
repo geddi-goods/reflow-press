@@ -19,8 +19,8 @@ header{display:flex;align-items:center;gap:8px;padding:12px 16px;flex-wrap:wrap}
 .tagline{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:6px 0 0 14px;white-space:nowrap}
 .hb{display:flex;gap:8px;margin-left:auto}
 .work{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;padding:0 16px 16px;min-height:0}
-.stagebox{background:var(--stage);border-radius:8px;display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
-.stage{position:relative;display:grid;place-items:center;overflow:hidden;min-height:0;background:var(--stage)}
+.stagebox{background:var(--stagebg,var(--stage));border-radius:8px;display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+.stage{position:relative;display:grid;place-items:center;overflow:hidden;min-height:0;background:var(--stagebg,var(--stage))}
 .frame{position:relative;overflow:hidden;background:var(--sitebg,#fff);border:1px solid #c9c9c6;box-shadow:0 18px 40px -22px rgba(0,0,0,.35);display:flex;flex-direction:column}
 .url{flex:none;height:30px;display:grid;place-items:center;font:12px/1 Inter,sans-serif;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 12px}
 .view{position:relative;overflow:hidden;flex:none}
@@ -83,6 +83,15 @@ select{background:var(--soft);height:35px}
 .present .work{grid-template-columns:1fr;padding:0}
 .present .stagebox{border-radius:0;grid-template-rows:minmax(0,1fr)}
 .rec .frame{box-shadow:none}
+.rec,.rec .app{background:var(--stagebg,var(--stage))}
+.rec .stagebox{display:grid;place-items:center;grid-template-rows:minmax(0,1fr)}
+.rec .stage{width:var(--rw);height:var(--rh)}
+.noshadow .frame{box-shadow:none}
+.color{display:grid;grid-template-columns:44px minmax(0,1fr);gap:6px;margin-top:2px}
+.color input[type=color]{width:44px;height:35px;padding:2px;border:1px solid var(--line);background:var(--field);border-radius:0;cursor:pointer}
+.color input[type=text]{font:inherit;font-size:13px;height:35px;border:1px solid var(--line);border-radius:0;padding:0 8px;background:var(--field);color:var(--ink);font-variant-numeric:tabular-nums}
+.swatches{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.swatches button{width:28px;min-height:28px;padding:0;border:1px solid var(--line)}
 
 @media(max-width:900px){
   body{overflow:auto}
@@ -182,9 +191,25 @@ select{background:var(--soft);height:35px}
       </div>
 
       <div class="panel">
+        <h3>Background</h3>
+        <div class="color"><input type="color" id="bgPick" value="#e5e5e5" aria-label="Background colour"><input type="text" id="bgHex" value="#e5e5e5" aria-label="Background hex" spellcheck="false"></div>
+        <div class="swatches" id="sw"></div>
+        <label class="chk"><input type="checkbox" id="shadow" checked> Shadow under the window</label>
+      </div>
+
+      <div class="panel">
         <h3>Export</h3>
+        <label for="size">Video size</label>
+        <select id="size">
+          <option value="1920x1080">1920 × 1080 · 16:9</option>
+          <option value="2560x1440" selected>2560 × 1440 · 16:9</option>
+          <option value="3840x2160">3840 × 2160 · 4K</option>
+          <option value="1080x1080">1080 × 1080 · square</option>
+          <option value="1080x1350">1080 × 1350 · 4:5</option>
+          <option value="1080x1920">1080 × 1920 · vertical</option>
+        </select>
         <div class="kv"><label for="loops">Loops</label><input type="range" id="loops" min="1" max="4" step="1" value="1"><output id="loopsO"></output></div>
-        <p class="note">Export records one pass of the animation in Chrome or Edge. Choose “This tab” when asked; the panels hide while it records. Space plays, 1 2 3 jump to a state, Esc leaves Present.</p>
+        <p class="note">Records in Chrome or Edge: choose “This tab” when asked. The panels hide and the stage takes the video's shape while it records. Sharpness is capped by your screen, so for 1440p or 4K use a large window on a Retina display. Space plays, 1 2 3 jump to a state, Esc leaves Present.</p>
       </div>
     </aside>
   </div>
@@ -469,24 +494,30 @@ let recording=false;
 $('export').onclick=async()=>{
   if(recording)return;
   if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||!window.MediaRecorder){toast('Export needs desktop Chrome or Edge.');return;}
+  const [VW,VH]=$('size').value.split('x').map(Number);
   let stream;
   try{
-    stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:60,cursor:'never',displaySurface:'browser'},audio:false,preferCurrentTab:true,selfBrowserSurface:'include',surfaceSwitching:'exclude'});
+    stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:60},width:{ideal:VW},height:{ideal:VH},cursor:'never',displaySurface:'browser'},audio:false,preferCurrentTab:true,selfBrowserSurface:'include',surfaceSwitching:'exclude'});
   }catch(e){toast('Export cancelled.');return;}
   const track=stream.getVideoTracks()[0];
   recording=true; $('export').disabled=true;
+  // Shape the stage like the video, as large as the window allows
+  const ar=VW/VH, sw=Math.min(innerWidth,innerHeight*ar);
+  document.body.style.setProperty('--rw',Math.floor(sw)+'px'); document.body.style.setProperty('--rh',Math.floor(sw/ar)+'px');
   document.body.classList.add('present','rec'); setPlay(false); T=0;
   await new Promise(r=>setTimeout(r,80)); fit();
   if(window.CropTarget&&track.cropTo){try{await track.cropTo(await CropTarget.fromElement($('stage')));}catch(e){}}
+  try{await track.applyConstraints({width:{ideal:VW},height:{ideal:VH},frameRate:{ideal:60}});}catch(e){}
   await new Promise(r=>setTimeout(r,400));
   const types=['video/mp4;codecs=avc3.640028','video/mp4;codecs=avc3.42E01E','video/mp4;codecs=avc1.640028','video/mp4;codecs=avc1.4d002a','video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm'];
   const mime=types.find(t=>MediaRecorder.isTypeSupported(t));
-  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:16e6});
+  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:Math.round(Math.min(80e6,Math.max(16e6,VW*VH*60*0.14)))});
   const chunks=[]; rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
   const stopped=new Promise(r=>rec.onstop=r);
   rec.start(250); T=0; render(); setPlay(true);
   const ms=total*(+$('loops').value)/(+$('spd').value)+150;
   await new Promise(r=>{const h=setTimeout(r,ms); track.addEventListener('ended',()=>{clearTimeout(h);r();},{once:true});});
+  const got=track.getSettings();
   if(rec.state!=='inactive')rec.stop(); await stopped;
   stream.getTracks().forEach(t=>t.stop());
   document.body.classList.remove('present','rec'); recording=false; $('export').disabled=false; setTimeout(fit,60);
@@ -495,7 +526,8 @@ $('export').onclick=async()=>{
   const host=($('urlText').textContent||'site').replace(/[^\w.-]+/g,'-');
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`reflow-${host}.${isMp4?'mp4':'webm'}`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),60000);
-  toast(isMp4?'Saved .mp4':'This browser can only record .webm, saved that instead.',5000);
+  const res=got.width?` at ${got.width} × ${got.height}`:'';
+  toast((isMp4?'Saved .mp4':'Saved .webm (this browser cannot record .mp4)')+res+(got.width&&got.width<VW*0.9?'. Use a bigger window or a Retina screen for full size.':''),7000);
 };
 
 document.addEventListener('keydown',e=>{
@@ -504,6 +536,21 @@ document.addEventListener('keydown',e=>{
   if(['1','2','3'].includes(e.key))jumpTo(+e.key-1);
   if(e.key==='Escape'&&document.body.classList.contains('present')&&!recording)exitPresent();
 });
+
+/* ---------- background ---------- */
+const SW=['#e5e5e5','#ffffff','#1d1d1b','#d9d2c5','#c8d3cf','#f2e6d8'];
+function setBg(hex,save=true){
+  if(!/^#[0-9a-f]{6}$/i.test(hex))return;
+  document.documentElement.style.setProperty('--stagebg',hex);
+  $('bgPick').value=hex.toLowerCase(); if(document.activeElement!==$('bgHex'))$('bgHex').value=hex.toLowerCase();
+  if(save){try{localStorage.setItem('reflow-bg',hex);}catch(e){}}
+}
+$('sw').innerHTML=SW.map(c=>`<button style="background:${c}" data-c="${c}" aria-label="Background ${c}"></button>`).join('');
+$('sw').querySelectorAll('button').forEach(b=>b.onclick=()=>setBg(b.dataset.c));
+$('bgPick').addEventListener('input',e=>setBg(e.target.value));
+$('bgHex').addEventListener('input',e=>{let v=e.target.value.trim();if(!v.startsWith('#'))v='#'+v;if(/^#[0-9a-f]{3}$/i.test(v))v='#'+[...v.slice(1)].map(c=>c+c).join('');setBg(v);});
+$('shadow').addEventListener('change',e=>document.body.classList.toggle('noshadow',!e.target.checked));
+try{const b=localStorage.getItem('reflow-bg');if(b)setBg(b,false);}catch(e){}
 
 statesUI(); easeUI(); build();
 let start='https://www.strandlundberger.com';
