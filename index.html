@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reflow Press</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;
+  --bg:#eeeeee;--stage:#e5e5e5;--ink:#1d1d1b;--mute:#7a7a77;--line:#d4d4d4;--field:#fff;--soft:#f7f7f7}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+.app{display:grid;grid-template-rows:auto minmax(0,1fr);height:100vh}
+header{display:flex;align-items:center;gap:8px;padding:12px 16px;flex-wrap:wrap}
+.logo{font:24px/1 "Archivo Black",Inter,sans-serif;letter-spacing:-.04em;margin:0;white-space:nowrap}
+.logo sup{font:600 10px Inter,sans-serif;vertical-align:top;margin-left:2px}
+.tagline{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:6px 0 0 14px;white-space:nowrap}
+.hb{display:flex;gap:8px;margin-left:auto}
+.work{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;padding:0 16px 16px;min-height:0}
+.stagebox{background:var(--stage);border-radius:8px;display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+.stage{position:relative;display:grid;place-items:center;overflow:hidden;min-height:0;background:var(--stage)}
+.frame{position:relative;overflow:hidden;background:var(--sitebg,#fff);border:1px solid #c9c9c6;box-shadow:0 18px 40px -22px rgba(0,0,0,.35);display:flex;flex-direction:column}
+.url{flex:none;height:30px;display:grid;place-items:center;font:12px/1 Inter,sans-serif;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 12px}
+.view{position:relative;overflow:hidden;flex:none}
+.scaler{position:absolute;left:0;top:0;transform-origin:0 0}
+.scaler iframe{display:block;border:0;width:100%;height:100%;background:var(--sitebg,#fff)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--mute);font-size:13px;background:var(--stage);transition:opacity .3s}
+.loading.off{opacity:0;pointer-events:none}
+
+.foot{padding:4px 12px 12px}
+.ruler{position:relative;height:26px;margin:0 8px 4px}
+.ruler .mk{position:absolute;top:0;transform:translateX(-50%);font-size:11px;color:var(--mute);white-space:nowrap}
+.ruler .mk::after{content:"";display:block;width:1px;height:8px;background:var(--mute);opacity:.5;margin:2px auto 0}
+.ruler .bp{font-style:italic}
+.ruler .cur{position:absolute;top:14px;width:10px;height:10px;background:var(--ink);transform:translateX(-50%) rotate(45deg)}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.row .grow{flex:1}
+.status{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
+input[type=range]{width:100%;accent-color:var(--ink);height:26px;margin:0}
+#scrub{flex:1;min-width:160px}
+button,.btn{font:500 13px Inter,system-ui,sans-serif;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:0;min-height:35px;padding:0 12px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;position:relative}
+header button{background:var(--soft)}
+.foot button,.sm button{font-size:12px;min-height:30px;padding:0 10px}
+button:hover,.btn:hover{border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,.btn:focus-within{outline:2px solid var(--ink);outline-offset:2px}
+button.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+button:disabled{opacity:.5;cursor:default}
+.btn input{position:absolute;opacity:0;width:1px;height:1px}
+
+.rail{overflow-y:auto;display:flex;flex-direction:column;gap:12px;min-height:0}
+.panel{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px}
+.panel h3{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+.grid{display:grid;grid-template-columns:62px minmax(0,1fr) minmax(0,1fr);gap:6px 8px;align-items:center}
+label,.lbl{font-size:12px;color:var(--mute)}
+input[type=number],input[type=url],select{font:inherit;font-size:13px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:0;height:32px;padding:0 8px;width:100%;font-variant-numeric:tabular-nums}
+input[type=url]{height:35px;font-size:14px}
+select{background:var(--soft);height:35px}
+.urlrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.bz{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;align-items:center;margin-top:10px}
+.bz svg{width:96px;height:96px;background:var(--field);border:1px solid var(--line)}
+.bz .q{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.kv{display:grid;grid-template-columns:72px minmax(0,1fr) 48px;gap:8px;align-items:center;margin-top:6px}
+.kv output{font-variant-numeric:tabular-nums;font-size:12px;text-align:right}
+.chk{display:flex;align-items:center;gap:8px;margin-top:10px;color:var(--ink);font-size:13px}
+.chk input{accent-color:var(--ink);width:16px;height:16px}
+.note{font-size:12px;color:var(--mute);margin:10px 0 0}
+.fonts{display:flex;flex-direction:column;gap:6px}
+.font{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center;background:var(--field);border:1px solid var(--line);padding:8px 10px}
+.font b{font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.font small{grid-column:1;font-size:11px;color:var(--mute)}
+.font .btn{grid-row:1/3;grid-column:2;min-height:30px;font-size:12px;padding:0 10px}
+.font.miss small{color:#b3261e}
+.font.up small{color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);border-radius:6px;padding:8px 14px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw}
+.toast.show{opacity:1}
+
+.present header,.present .rail,.present .foot{display:none}
+.present .app{grid-template-rows:minmax(0,1fr)}
+.present .work{grid-template-columns:1fr;padding:0}
+.present .stagebox{border-radius:0;grid-template-rows:minmax(0,1fr)}
+.rec .frame{box-shadow:none}
+
+@media(max-width:900px){
+  body{overflow:auto}
+  .app{height:auto}
+  .work{grid-template-columns:1fr}
+  .stagebox{grid-template-rows:62vh auto}
+  .tagline{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1 class="logo">REFLOW PRESS<sup>©</sup></h1>
+    <span class="tagline">Desktop · Tablet · Phone · Hyphenation</span>
+    <div class="hb">
+      <button id="restart">Restart</button>
+      <button id="present">Present</button>
+      <button id="export">Export .mp4</button>
+      <button class="pri" id="play">Pause</button>
+    </div>
+  </header>
+  <div class="work">
+    <div class="stagebox">
+      <div class="stage" id="stage">
+        <div class="frame" id="frame">
+          <div class="url" id="urlText"></div>
+          <div class="view" id="view">
+            <div class="scaler" id="scaler"><iframe id="site" title="Website preview"></iframe></div>
+            <div class="loading" id="loading">Loading site…</div>
+          </div>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="ruler" id="ruler"></div>
+        <div class="row"><input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Timeline"></div>
+        <div class="row" style="margin-top:6px">
+          <span class="chips" id="jump"></span>
+          <span class="grow"></span>
+          <span class="status" id="status"></span>
+        </div>
+      </div>
+    </div>
+
+    <aside class="rail">
+      <div class="panel">
+        <h3>Site</h3>
+        <form class="urlrow" id="urlForm">
+          <input type="url" id="urlIn" placeholder="https://www.example.com" value="https://www.strandlundberger.com" aria-label="Website address" required>
+          <button type="submit">Load</button>
+        </form>
+        <label class="chk"><input type="checkbox" id="showUrl" checked> Show address in the frame</label>
+      </div>
+
+      <div class="panel">
+        <h3>Fonts</h3>
+        <div class="fonts" id="fonts"><p class="note" style="margin:0">Load a site to see its fonts.</p></div>
+        <p class="note">Fonts found on the site. Upload your licensed file for any that are missing, or to replace one.</p>
+      </div>
+
+      <div class="panel">
+        <h3>States</h3>
+        <div class="grid" id="states"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Motion</h3>
+        <select id="path" aria-label="Path">
+          <option value="pp">Desktop → Tablet → Phone → back</option>
+          <option value="cy">Desktop → Tablet → Phone → Desktop</option>
+          <option value="dp">Desktop ↔ Phone only</option>
+        </select>
+        <div class="kv"><label for="dur">Transition</label><input type="range" id="dur" min="400" max="6000" step="100" value="2200"><output id="durO"></output></div>
+        <div class="kv"><label for="hold">Hold</label><input type="range" id="hold" min="0" max="4000" step="100" value="1000"><output id="holdO"></output></div>
+        <div class="kv"><label for="spd">Speed</label><input type="range" id="spd" min="0.25" max="2" step="0.25" value="1"><output id="spdO"></output></div>
+      </div>
+
+      <div class="panel sm">
+        <h3>Easing</h3>
+        <div class="chips" id="ease"></div>
+        <div class="bz">
+          <svg viewBox="-10 -40 120 180" id="curve" aria-label="Easing curve"></svg>
+          <div class="q" id="bzq"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Typography</h3>
+        <select id="hy" aria-label="Hyphenation">
+          <option value="site">Hyphens as the site sets them</option>
+          <option value="auto">Force hyphens on</option>
+          <option value="limit">Force on, words of 7+ letters</option>
+          <option value="off">Force hyphens off</option>
+        </select>
+        <label class="chk"><input type="checkbox" id="bal"> Balance line lengths</label>
+        <p class="note">The real site reflows every frame, so each line break and hyphen is the browser's own result at that width.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Export</h3>
+        <div class="kv"><label for="loops">Loops</label><input type="range" id="loops" min="1" max="4" step="1" value="1"><output id="loopsO"></output></div>
+        <p class="note">Export records one pass of the animation in Chrome or Edge. Choose “This tab” when asked; the panels hide while it records. Space plays, 1 2 3 jump to a state, Esc leaves Present.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+{
+const $ = id => document.getElementById(id);
+const S = [
+  {name:'Desktop', w:1440, h:900, r:10},
+  {name:'Tablet',  w:810,  h:1080, r:24},
+  {name:'Phone',   w:390,  h:844, r:44}
+];
+let BPS = [];
+const EASES = {'Smooth':[0.65,0,0.35,1],'Expo':[0.87,0,0.13,1],'Soft':[0.45,0,0.55,1],'Overshoot':[0.68,-0.35,0.32,1.35],'Linear':[0,0,1,1]};
+let bz = EASES.Smooth.slice(), easeName='Smooth';
+const URL_H = 30;
+const useProxy = location.protocol !== 'file:';
+
+function toast(msg,ms=3200){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms);}
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- easing ---------- */
+function bezier([x1,y1,x2,y2]){
+  const cx=3*x1,bx=3*(x2-x1)-cx,ax=1-cx-bx,cy=3*y1,by=3*(y2-y1)-cy,ay=1-cy-by;
+  const sx=t=>((ax*t+bx)*t+cx)*t, sy=t=>((ay*t+by)*t+cy)*t, dx=t=>(3*ax*t+2*bx)*t+cx;
+  return x=>{ if(x<=0)return 0; if(x>=1)return 1;
+    let t=x; for(let i=0;i<8;i++){const e=sx(t)-x,d=dx(t); if(Math.abs(e)<1e-6||Math.abs(d)<1e-6)break; t-=e/d;}
+    if(t<0||t>1){let lo=0,hi=1;t=x;while(hi-lo>1e-6){sx(t)<x?lo=t:hi=t;t=(lo+hi)/2;}}
+    return sy(t); };
+}
+let ease = bezier(bz);
+
+/* ---------- timeline ---------- */
+let segs=[], total=1;
+function build(){
+  const p=$('path').value, dur=+$('dur').value, hold=+$('hold').value;
+  const order = p==='pp'?[0,1,2,1,0]:p==='cy'?[0,1,2,0]:[0,2,0];
+  segs=[]; let t=0;
+  order.forEach((s,i)=>{
+    if(i===order.length-1 && order[0]===s) return;
+    if(hold){segs.push({t0:t,t1:t+hold,a:s,b:s});t+=hold;}
+    const n=order[i+1]; if(n===undefined) return;
+    segs.push({t0:t,t1:t+dur,a:s,b:n}); t+=dur;
+  });
+  total=t||1;
+  $('durO').textContent=(dur/1000).toFixed(1)+' s';
+  $('holdO').textContent=(hold/1000).toFixed(1)+' s';
+}
+function at(t){
+  t=((t%total)+total)%total;
+  const g=segs.find(s=>t>=s.t0&&t<s.t1)||segs[segs.length-1];
+  const A=S[g.a],B=S[g.b]; const k=g.a===g.b?0:ease((t-g.t0)/(g.t1-g.t0));
+  const L=(x,y)=>x+(y-x)*k;
+  return {w:L(A.w,B.w),h:L(A.h,B.h),r:L(A.r,B.r)};
+}
+
+/* ---------- layout ---------- */
+let scale=.5;
+function fit(){
+  const st=$('stage'), W=st.clientWidth-40, H=st.clientHeight-40;
+  const mw=Math.max(...S.map(s=>s.w))*1.04, mh=Math.max(...S.map(s=>s.h));
+  const urlH = $('showUrl').checked?URL_H:0;
+  scale=Math.max(.05,Math.min(W/mw,(H-urlH)/mh,1));
+  drawRuler(); render();
+}
+const roStage=new ResizeObserver(fit); roStage.observe($('stage'));
+
+function drawRuler(){
+  const ws=[...S.map(s=>s.w),...BPS];
+  const lo=Math.min(...ws)-40, hi=Math.max(...ws)+40;
+  const pos=w=>((w-lo)/(hi-lo)*100).toFixed(2)+'%';
+  const r=$('ruler'); r.dataset.lo=lo; r.dataset.hi=hi;
+  const near=w=>S.some(s=>Math.abs(s.w-w)<70);
+  const isBp=w=>BPS.some(b=>Math.abs(b-w)<=1);
+  r.innerHTML=S.map(s=>`<span class="mk${isBp(s.w)?' bp':''}" style="left:${pos(s.w)}">${s.name} ${s.w}${isBp(s.w)?' · bp':''}</span>`).join('')
+    +BPS.filter(b=>!near(b)).map(b=>`<span class="mk bp" style="left:${pos(b)}">${b} bp</span>`).join('')
+    +'<span class="cur" id="cur"></span>';
+}
+
+let T=0, playing=true, last=performance.now(), bigEl=null;
+function range(w){
+  if(!BPS.length) return '';
+  const lower=BPS.filter(b=>b<=w).pop(), upper=BPS.find(b=>b>w);
+  return lower==null?`below ${upper}`:upper==null?`${lower}+`:`${lower}–${upper-1}`;
+}
+function render(){
+  const v=at(T), urlH=$('showUrl').checked?URL_H:0;
+  const f=$('frame'), vw=$('view'), sc=$('scaler');
+  const W=Math.round(v.w), H=Math.round(v.h);
+  f.style.width=(W*scale+2)+'px'; f.style.borderRadius=Math.max(2,v.r*scale)+'px';
+  vw.style.width=(W*scale)+'px'; vw.style.height=(H*scale)+'px';
+  sc.style.width=W+'px'; sc.style.height=H+'px'; sc.style.transform=`scale(${scale})`;
+  $('urlText').style.display=urlH?'':'none';
+  let big='';
+  if(bigEl&&bigEl.isConnected){try{big=' · largest text '+parseFloat(bigEl.ownerDocument.defaultView.getComputedStyle(bigEl).fontSize).toFixed(1)+' px';}catch(e){}}
+  const rg=range(W);
+  $('status').textContent=`${W} × ${H} px${rg?' · range '+rg:''}${big} · shown at ${Math.round(scale*100)}%`;
+  const r=$('ruler'),c=$('cur'); if(c){const lo=+r.dataset.lo,hi=+r.dataset.hi;c.style.left=((v.w-lo)/(hi-lo)*100)+'%';}
+  if(!scrubbing) $('scrub').value=Math.round((((T%total)+total)%total)/total*1000);
+}
+function loop(now){
+  const dt=Math.min(100,now-last); last=now;
+  if(playing){T+=dt*(+$('spd').value);render();}
+  requestAnimationFrame(loop);
+}
+
+/* ---------- site loading ---------- */
+let siteDoc=null;
+const uploaded=new Map(); // family -> ArrayBuffer
+function loadSite(raw){
+  let u; try{u=new URL(/^https?:\/\//i.test(raw)?raw:'https://'+raw);}catch(e){toast('That address does not look right.');return;}
+  $('urlIn').value=u.href;
+  $('urlText').textContent=u.host.replace(/^www\./,'')+(u.pathname!=='/'?u.pathname:'');
+  $('loading').textContent='Loading '+u.host+'…'; $('loading').classList.remove('off');
+  siteDoc=null; bigEl=null; BPS=[]; drawRuler();
+  $('fonts').innerHTML='<p class="note" style="margin:0">Reading fonts…</p>';
+  $('site').src = useProxy ? 'api/proxy?url='+encodeURIComponent(u.href) : u.href;
+  try{localStorage.setItem('reflow-url',u.href);}catch(e){}
+}
+$('urlForm').addEventListener('submit',e=>{e.preventDefault();loadSite($('urlIn').value.trim());});
+$('site').addEventListener('load',async()=>{
+  $('loading').classList.add('off');
+  let d=null; try{d=$('site').contentDocument; if(d&&!d.body)d=null;}catch(e){d=null;}
+  if(!d){
+    $('fonts').innerHTML='<p class="note" style="margin:0">Font detection needs the app to run from its server (Vercel or dev-server.js). The site still reflows for real.</p>';
+    return;
+  }
+  siteDoc=d;
+  try{ document.documentElement.style.setProperty('--sitebg', getComputedStyle(d.body).backgroundColor==='rgba(0, 0, 0, 0)'?getComputedStyle(d.documentElement).backgroundColor:getComputedStyle(d.body).backgroundColor);}catch(e){}
+  applyTypo();
+  injectFonts();
+  try{await Promise.race([d.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
+  setTimeout(()=>{scanFonts();scanBreakpoints();findBig();render();},400);
+});
+
+function scanBreakpoints(){
+  const set=new Set();
+  const walk=rules=>{for(const r of rules){
+    if(r.media||r.conditionText){const t=(r.conditionText||r.media.mediaText||'');
+      for(const m of t.matchAll(/(min|max)-width:\s*([\d.]+)px/g)){let n=parseFloat(m[2]);if(m[1]==='max')n=Math.round(n+ (n%1?0.02:1));set.add(Math.round(n));}
+      for(const m of t.matchAll(/width\s*(>=|>|<=|<)\s*([\d.]+)px/g)){let n=parseFloat(m[2]);if(m[1]==='<='||m[1]==='>')n+=1;set.add(Math.round(n));}}
+    if(r.cssRules)walk(r.cssRules);}};
+  for(const sh of siteDoc.styleSheets){try{walk(sh.cssRules);}catch(e){}}
+  BPS=[...set].filter(n=>n>=280&&n<=2600).sort((a,b)=>a-b);
+  drawRuler();
+}
+function findBig(){
+  let best=null,bs=0; const w=siteDoc.defaultView;
+  for(const el of siteDoc.body.querySelectorAll('*')){
+    if(![...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim()))continue;
+    const fs=parseFloat(w.getComputedStyle(el).fontSize); if(fs>bs){bs=fs;best=el;}
+  }
+  bigEl=best;
+}
+const GENERIC=/^(serif|sans-serif|monospace|cursive|fantasy|system-ui|ui-[a-z-]+|-apple-system|blinkmacsystemfont|inherit|initial|emoji|math)$/i;
+function scanFonts(){
+  if(!siteDoc)return;
+  const w=siteDoc.defaultView, fams=new Map();
+  for(const el of siteDoc.body.querySelectorAll('*')){
+    if(![...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim()))continue;
+    const cs=w.getComputedStyle(el);
+    const first=cs.fontFamily.split(',')[0].trim().replace(/^["']|["']$/g,'');
+    if(!first||GENERIC.test(first))continue;
+    const e=fams.get(first)||{n:0,weights:new Set(),sample:''};
+    e.n++; e.weights.add(cs.fontWeight); if(!e.sample)e.sample=el.textContent.trim().slice(0,40);
+    fams.set(first,e);
+  }
+  const loaded=new Set(); siteDoc.fonts.forEach(ff=>{if(ff.status==='loaded')loaded.add(ff.family.replace(/^["']|["']$/g,''));});
+  if(!fams.size){$('fonts').innerHTML='<p class="note" style="margin:0">No custom fonts found; the site uses system fonts.</p>';return;}
+  $('fonts').innerHTML=[...fams].sort((a,b)=>b[1].n-a[1].n).map(([f,e],i)=>{
+    const up=uploaded.has(f), ok=loaded.has(f)||siteDoc.fonts.check(`16px "${f}"`)&&[...siteDoc.fonts].some(x=>x.family.replace(/["']/g,'')===f&&x.status==='loaded');
+    const st=up?'Using your upload':ok?'Loaded from the site':'Missing, showing a fallback';
+    return `<div class="font ${up?'up':ok?'':'miss'}"><b title="${esc(f)}">${esc(f)}</b><small>${st} · weight ${esc([...e.weights].join(', '))}</small>
+      <label class="btn">${up?'Replace':'Upload'}<input type="file" accept=".woff2,.woff,.ttf,.otf" data-f="${esc(f)}"></label></div>`;
+  }).join('');
+  $('fonts').querySelectorAll('input[type=file]').forEach(inp=>inp.addEventListener('change',async e=>{
+    const file=e.target.files[0]; if(!file)return;
+    await addFont(inp.dataset.f, await file.arrayBuffer(), true);
+  }));
+}
+async function addFont(fam,buf,announce){
+  try{
+    // check the file is a real font before using it
+    const test=new FontFace('reflow-test',buf.slice(0)); await test.load();
+  }catch(err){toast('Could not read that font file.');return;}
+  const old=uploaded.get(fam); if(old&&old.url)URL.revokeObjectURL(old.url);
+  uploaded.set(fam,{buf,url:URL.createObjectURL(new Blob([buf]))});
+  injectFonts();
+  if(siteDoc){try{await siteDoc.fonts.load(`16px "${fam}"`);}catch(e){}}
+  if(announce){toast(fam+' applied');setTimeout(()=>{scanFonts();findBig();render();},150);}
+}
+// Uploaded fonts go in as the last @font-face rules, for every weight and style,
+// so they win over the site's own declarations of the same family.
+function injectFonts(){
+  if(!siteDoc)return;
+  let st=siteDoc.getElementById('reflow-fonts');
+  if(!st){st=siteDoc.createElement('style');st.id='reflow-fonts';}
+  siteDoc.head.appendChild(st);
+  let css='';
+  for(const [fam,{url}] of uploaded){
+    const f=fam.replace(/["\\]/g,'');
+    for(let w=100;w<=900;w+=100)for(const sty of ['normal','italic'])
+      css+=`@font-face{font-family:"${f}";src:url("${url}");font-weight:${w};font-style:${sty};font-display:block}`;
+  }
+  st.textContent=css;
+}
+
+/* ---------- typography overrides ---------- */
+function applyTypo(){
+  if(!siteDoc)return;
+  let st=siteDoc.getElementById('reflow-typo');
+  if(!st){st=siteDoc.createElement('style');st.id='reflow-typo';siteDoc.head.appendChild(st);}
+  const hy=$('hy').value; let css='';
+  if(hy!=='site'){
+    if(!siteDoc.documentElement.lang)siteDoc.documentElement.lang='en';
+    const v=hy==='off'?'manual':'auto';
+    css+=`*{hyphens:${v}!important;-webkit-hyphens:${v}!important}`;
+    if(hy==='limit')css+='*{hyphenate-limit-chars:7 3 3!important}';
+  }
+  if($('bal').checked)css+='h1,h2,h3,h4,h5,h6,p{text-wrap:balance!important}';
+  st.textContent=css;
+}
+['hy','bal'].forEach(id=>$(id).addEventListener('input',applyTypo));
+
+/* ---------- controls ---------- */
+function setPlay(p){playing=p;$('play').textContent=p?'Pause':'Play';last=performance.now();}
+$('play').onclick=()=>setPlay(!playing);
+$('restart').onclick=()=>{T=0;render();setPlay(true);};
+let scrubbing=false;
+$('scrub').addEventListener('input',e=>{scrubbing=true;setPlay(false);T=e.target.value/1000*total;render();});
+$('scrub').addEventListener('change',()=>{scrubbing=false;});
+['path','dur','hold'].forEach(id=>$(id).addEventListener('input',()=>{const p=(((T%total)+total)%total)/total;build();T=p*total;render();}));
+$('spd').addEventListener('input',()=>$('spdO').textContent=$('spd').value+'×');$('spdO').textContent='1×';
+$('loops').addEventListener('input',()=>$('loopsO').textContent=$('loops').value+'×');$('loopsO').textContent='1×';
+$('showUrl').addEventListener('change',fit);
+
+function jumpTo(i){
+  const g=segs.find(s=>s.a===i&&s.b===i)||segs.find(s=>s.b===i);
+  T=g.a===g.b?g.t0+1:g.t1-1; setPlay(false); render();
+}
+function statesUI(){
+  $('states').innerHTML='<span></span><label>Width</label><label>Height</label>'+S.map((s,i)=>
+    `<label for="w${i}">${s.name}</label><input type="number" id="w${i}" value="${s.w}" min="240" max="2560" step="10" aria-label="${s.name} width"><input type="number" id="h${i}" value="${s.h}" min="320" max="1600" step="10" aria-label="${s.name} height">`).join('');
+  S.forEach((s,i)=>{
+    $('w'+i).addEventListener('input',e=>{s.w=Math.max(240,+e.target.value||s.w);fit();});
+    $('h'+i).addEventListener('input',e=>{s.h=Math.max(320,+e.target.value||s.h);fit();});
+  });
+  $('jump').innerHTML=S.map((s,i)=>`<button data-i="${i}">Show ${s.name}</button>`).join('');
+  $('jump').querySelectorAll('button').forEach(b=>b.onclick=()=>jumpTo(+b.dataset.i));
+}
+function easeUI(){
+  $('ease').innerHTML=Object.keys(EASES).map(n=>`<button class="${n===easeName?'on':''}" data-n="${n}">${n}</button>`).join('');
+  $('ease').querySelectorAll('button').forEach(b=>b.onclick=()=>{easeName=b.dataset.n;bz=EASES[easeName].slice();applyBz();easeUI();});
+  $('bzq').innerHTML=['x1','y1','x2','y2'].map((k,i)=>`<input type="number" step="0.05" id="bz${i}" value="${bz[i]}" aria-label="Bezier ${k}" title="${k}">`).join('');
+  bz.forEach((_,i)=>$('bz'+i).addEventListener('input',e=>{let v=+e.target.value;if(i%2===0)v=Math.min(1,Math.max(0,v));bz[i]=v;easeName='';applyBz();
+    $('ease').querySelectorAll('button').forEach(b=>b.classList.remove('on'));}));
+  drawCurve();
+}
+function applyBz(){ease=bezier(bz);drawCurve();render();}
+function drawCurve(){
+  const P=(x,y)=>`${x*100} ${100-y*100}`;
+  $('curve').innerHTML=`<rect x="0" y="0" width="100" height="100" fill="none" stroke="currentColor" stroke-opacity=".15"/>
+   <line x1="0" y1="100" x2="${bz[0]*100}" y2="${100-bz[1]*100}" stroke="#7a7a77"/>
+   <line x1="100" y1="0" x2="${bz[2]*100}" y2="${100-bz[3]*100}" stroke="#7a7a77"/>
+   <path d="M0 100 C${P(bz[0],bz[1])} ${P(bz[2],bz[3])} 100 0" fill="none" stroke="currentColor" stroke-width="3"/>
+   <circle cx="${bz[0]*100}" cy="${100-bz[1]*100}" r="5" fill="#1d1d1b"/><circle cx="${bz[2]*100}" cy="${100-bz[3]*100}" r="5" fill="#1d1d1b"/>`;
+}
+
+/* ---------- present ---------- */
+function exitPresent(){document.body.classList.remove('present');setTimeout(fit,60);}
+$('present').onclick=async()=>{
+  document.body.classList.add('present'); setPlay(true);
+  try{await document.documentElement.requestFullscreen();}catch(e){}
+  setTimeout(fit,60);
+};
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&!recording)exitPresent();});
+
+/* ---------- export .mp4 ---------- */
+let recording=false;
+$('export').onclick=async()=>{
+  if(recording)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||!window.MediaRecorder){toast('Export needs desktop Chrome or Edge.');return;}
+  let stream;
+  try{
+    stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:60,cursor:'never',displaySurface:'browser'},audio:false,preferCurrentTab:true,selfBrowserSurface:'include',surfaceSwitching:'exclude'});
+  }catch(e){toast('Export cancelled.');return;}
+  const track=stream.getVideoTracks()[0];
+  recording=true; $('export').disabled=true;
+  document.body.classList.add('present','rec'); setPlay(false); T=0;
+  await new Promise(r=>setTimeout(r,80)); fit();
+  if(window.CropTarget&&track.cropTo){try{await track.cropTo(await CropTarget.fromElement($('stage')));}catch(e){}}
+  await new Promise(r=>setTimeout(r,400));
+  const types=['video/mp4;codecs=avc3.640028','video/mp4;codecs=avc3.42E01E','video/mp4;codecs=avc1.640028','video/mp4;codecs=avc1.4d002a','video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm'];
+  const mime=types.find(t=>MediaRecorder.isTypeSupported(t));
+  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:16e6});
+  const chunks=[]; rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+  const stopped=new Promise(r=>rec.onstop=r);
+  rec.start(250); T=0; render(); setPlay(true);
+  const ms=total*(+$('loops').value)/(+$('spd').value)+150;
+  await new Promise(r=>{const h=setTimeout(r,ms); track.addEventListener('ended',()=>{clearTimeout(h);r();},{once:true});});
+  if(rec.state!=='inactive')rec.stop(); await stopped;
+  stream.getTracks().forEach(t=>t.stop());
+  document.body.classList.remove('present','rec'); recording=false; $('export').disabled=false; setTimeout(fit,60);
+  const isMp4=mime.startsWith('video/mp4');
+  const blob=new Blob(chunks,{type:mime.split(';')[0]});
+  const host=($('urlText').textContent||'site').replace(/[^\w.-]+/g,'-');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`reflow-${host}.${isMp4?'mp4':'webm'}`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),60000);
+  toast(isMp4?'Saved .mp4':'This browser can only record .webm, saved that instead.',5000);
+};
+
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,select,textarea'))return;
+  if(e.code==='Space'){e.preventDefault();setPlay(!playing);}
+  if(['1','2','3'].includes(e.key))jumpTo(+e.key-1);
+  if(e.key==='Escape'&&document.body.classList.contains('present')&&!recording)exitPresent();
+});
+
+statesUI(); easeUI(); build();
+let start='https://www.strandlundberger.com';
+try{start=localStorage.getItem('reflow-url')||start;}catch(e){}
+fit(); loadSite(start);
+if(matchMedia('(prefers-reduced-motion: reduce)').matches) setPlay(false);
+requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
