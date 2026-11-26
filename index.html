@@ -120,7 +120,7 @@ select{background:var(--soft);height:35px}
         <div class="frame" id="frame">
           <div class="url" id="urlText"></div>
           <div class="view" id="view">
-            <div class="scaler" id="scaler"><iframe id="site" title="Website preview"></iframe></div>
+            <div class="scaler" id="scaler"><iframe id="site" title="Website preview" scrolling="no"></iframe></div>
             <div class="loading" id="loading">Loading site…</div>
           </div>
         </div>
@@ -424,7 +424,7 @@ function applyTypo(){
   if(!siteDoc)return;
   let st=siteDoc.getElementById('reflow-typo');
   if(!st){st=siteDoc.createElement('style');st.id='reflow-typo';siteDoc.head.appendChild(st);}
-  const hy=$('hy').value; let css='';
+  const hy=$('hy').value; let css='html{scrollbar-width:none!important}html::-webkit-scrollbar,body::-webkit-scrollbar,*::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}*{scrollbar-width:none!important}';
   if(hy!=='site'){
     if(!siteDoc.documentElement.lang)siteDoc.documentElement.lang='en';
     const v=hy==='off'?'manual':'auto';
