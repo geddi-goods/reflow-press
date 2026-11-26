@@ -19,10 +19,11 @@ header{display:flex;align-items:center;gap:8px;padding:12px 16px;flex-wrap:wrap}
 .tagline{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:6px 0 0 14px;white-space:nowrap}
 .hb{display:flex;gap:8px;margin-left:auto}
 .work{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;padding:0 16px 16px;min-height:0}
-.stagebox{background:var(--stagebg,var(--stage));border-radius:8px;display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
-.stage{position:relative;display:grid;place-items:center;overflow:hidden;min-height:0;background:var(--stagebg,var(--stage))}
+.stagebox{background:var(--stage);border-radius:8px;display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+.cwrap{display:grid;place-items:center;min-height:0;overflow:hidden;padding:16px 16px 4px}
+.stage{position:relative;display:grid;place-items:center;overflow:hidden;width:var(--cw,100%);height:var(--ch,100%);background:var(--stagebg,#e5e5e5);box-shadow:0 0 0 1px rgba(0,0,0,.08)}
 .frame{position:relative;overflow:hidden;background:var(--sitebg,#fff);border:1px solid #c9c9c6;box-shadow:0 18px 40px -22px rgba(0,0,0,.35);display:flex;flex-direction:column}
-.url{flex:none;height:30px;display:grid;place-items:center;font:12px/1 Inter,sans-serif;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 12px}
+.url{flex:none;height:30px;display:grid;place-items:center;font:12px/1 Inter,sans-serif;font-size:var(--uf,12px);height:var(--uh,30px);color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 12px}
 .view{position:relative;overflow:hidden;flex:none}
 .scaler{position:absolute;left:0;top:0;transform-origin:0 0}
 .scaler iframe{display:block;border:0;width:100%;height:100%;background:var(--sitebg,#fff)}
@@ -82,10 +83,10 @@ select{background:var(--soft);height:35px}
 .present .app{grid-template-rows:minmax(0,1fr)}
 .present .work{grid-template-columns:1fr;padding:0}
 .present .stagebox{border-radius:0;grid-template-rows:minmax(0,1fr)}
+.present .cwrap{padding:0}
+.present .stage{box-shadow:none}
 .rec .frame{box-shadow:none}
-.rec,.rec .app{background:var(--stagebg,var(--stage))}
-.rec .stagebox{display:grid;place-items:center;grid-template-rows:minmax(0,1fr)}
-.rec .stage{width:var(--rw);height:var(--rh)}
+.rec,.rec .app,.rec .stagebox{background:var(--stagebg,#e5e5e5)}
 .noshadow .frame{box-shadow:none}
 .color{display:grid;grid-template-columns:44px minmax(0,1fr);gap:6px;margin-top:2px}
 .color input[type=color]{width:44px;height:35px;padding:2px;border:1px solid var(--line);background:var(--field);border-radius:0;cursor:pointer}
@@ -116,7 +117,7 @@ select{background:var(--soft);height:35px}
   </header>
   <div class="work">
     <div class="stagebox">
-      <div class="stage" id="stage">
+      <div class="cwrap" id="cwrap"><div class="stage" id="stage">
         <div class="frame" id="frame">
           <div class="url" id="urlText"></div>
           <div class="view" id="view">
@@ -124,6 +125,7 @@ select{background:var(--soft);height:35px}
             <div class="loading" id="loading">Loading site…</div>
           </div>
         </div>
+      </div>
       </div>
       <div class="foot">
         <div class="ruler" id="ruler"></div>
@@ -191,7 +193,9 @@ select{background:var(--soft);height:35px}
       </div>
 
       <div class="panel">
-        <h3>Background</h3>
+        <h3>Canvas</h3>
+        <div class="chips" id="framing"></div>
+        <label style="display:block;margin-top:12px">Background</label>
         <div class="color"><input type="color" id="bgPick" value="#e5e5e5" aria-label="Background colour"><input type="text" id="bgHex" value="#e5e5e5" aria-label="Background hex" spellcheck="false"></div>
         <div class="swatches" id="sw"></div>
         <label class="chk"><input type="checkbox" id="shadow" checked> Shadow under the window</label>
@@ -199,17 +203,14 @@ select{background:var(--soft);height:35px}
 
       <div class="panel">
         <h3>Export</h3>
-        <label for="size">Video size</label>
+        <label for="size">Quality</label>
         <select id="size">
-          <option value="1920x1080">1920 × 1080 · 16:9</option>
-          <option value="2560x1440" selected>2560 × 1440 · 16:9</option>
-          <option value="3840x2160">3840 × 2160 · 4K</option>
-          <option value="1080x1080">1080 × 1080 · square</option>
-          <option value="1080x1350">1080 × 1350 · 4:5</option>
-          <option value="1080x1920">1080 × 1920 · vertical</option>
+          <option value="1080">1080p</option>
+          <option value="1440" selected>1440p</option>
+          <option value="2160">4K</option>
         </select>
         <div class="kv"><label for="loops">Loops</label><input type="range" id="loops" min="1" max="4" step="1" value="1"><output id="loopsO"></output></div>
-        <p class="note">Records in Chrome or Edge: choose “This tab” when asked. The panels hide and the stage takes the video's shape while it records. Sharpness is capped by your screen, so for 1440p or 4K use a large window on a Retina display. Space plays, 1 2 3 jump to a state, Esc leaves Present.</p>
+        <p class="note">Records in Chrome or Edge: choose “This tab” when asked. The panels hide and the canvas fills the window while it records. Sharpness is capped by your screen, so for 1440p or 4K use a large window on a Retina display. Space plays, 1 2 3 jump to a state, Esc leaves Present.</p>
       </div>
     </aside>
   </div>
@@ -227,7 +228,7 @@ const S = [
 let BPS = [];
 const EASES = {'Smooth':[0.65,0,0.35,1],'Expo':[0.87,0,0.13,1],'Soft':[0.45,0,0.55,1],'Overshoot':[0.68,-0.35,0.32,1.35],'Linear':[0,0,1,1]};
 let bz = EASES.Smooth.slice(), easeName='Smooth';
-const URL_H = 30;
+const urlH=()=>$('showUrl').checked?Math.max(16,Math.min(30,50*scale)):0;
 const useProxy = location.protocol !== 'file:';
 
 function toast(msg,ms=3200){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms);}
@@ -271,10 +272,9 @@ function at(t){
 /* ---------- layout ---------- */
 let scale=.5;
 function fit(){
-  const st=$('stage'), W=st.clientWidth-40, H=st.clientHeight-40;
+  const st=$('stage'), W=st.clientWidth*0.92, H=st.clientHeight*0.92;
   const mw=Math.max(...S.map(s=>s.w))*1.04, mh=Math.max(...S.map(s=>s.h));
-  const urlH = $('showUrl').checked?URL_H:0;
-  scale=Math.max(.05,Math.min(W/mw,(H-urlH)/mh,1));
+  scale=Math.max(.05,Math.min(W/mw,H/(mh+50),1));
   drawRuler(); render();
 }
 const roStage=new ResizeObserver(fit); roStage.observe($('stage'));
@@ -298,13 +298,14 @@ function range(w){
   return lower==null?`below ${upper}`:upper==null?`${lower}+`:`${lower}–${upper-1}`;
 }
 function render(){
-  const v=at(T), urlH=$('showUrl').checked?URL_H:0;
+  const v=at(T), uh=urlH();
+  document.documentElement.style.setProperty('--uh',uh+'px');document.documentElement.style.setProperty('--uf',Math.max(8,Math.min(12,uh*0.42))+'px');
   const f=$('frame'), vw=$('view'), sc=$('scaler');
   const W=Math.round(v.w), H=Math.round(v.h);
   f.style.width=(W*scale+2)+'px'; f.style.borderRadius=Math.max(2,v.r*scale)+'px';
   vw.style.width=(W*scale)+'px'; vw.style.height=(H*scale)+'px';
   sc.style.width=W+'px'; sc.style.height=H+'px'; sc.style.transform=`scale(${scale})`;
-  $('urlText').style.display=urlH?'':'none';
+  $('urlText').style.display=uh?'':'none';
   let big='';
   if(bigEl&&bigEl.isConnected){try{big=' · largest text '+parseFloat(bigEl.ownerDocument.defaultView.getComputedStyle(bigEl).fontSize).toFixed(1)+' px';}catch(e){}}
   const rg=range(W);
@@ -494,7 +495,7 @@ let recording=false;
 $('export').onclick=async()=>{
   if(recording)return;
   if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||!window.MediaRecorder){toast('Export needs desktop Chrome or Edge.');return;}
-  const [VW,VH]=$('size').value.split('x').map(Number);
+  const [VW,VH]=videoSize();
   let stream;
   try{
     stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:60},width:{ideal:VW},height:{ideal:VH},cursor:'never',displaySurface:'browser'},audio:false,preferCurrentTab:true,selfBrowserSurface:'include',surfaceSwitching:'exclude'});
@@ -502,8 +503,6 @@ $('export').onclick=async()=>{
   const track=stream.getVideoTracks()[0];
   recording=true; $('export').disabled=true;
   // Shape the stage like the video, as large as the window allows
-  const ar=VW/VH, sw=Math.min(innerWidth,innerHeight*ar);
-  document.body.style.setProperty('--rw',Math.floor(sw)+'px'); document.body.style.setProperty('--rh',Math.floor(sw/ar)+'px');
   document.body.classList.add('present','rec'); setPlay(false); T=0;
   await new Promise(r=>setTimeout(r,80)); fit();
   if(window.CropTarget&&track.cropTo){try{await track.cropTo(await CropTarget.fromElement($('stage')));}catch(e){}}
@@ -536,6 +535,30 @@ document.addEventListener('keydown',e=>{
   if(['1','2','3'].includes(e.key))jumpTo(+e.key-1);
   if(e.key==='Escape'&&document.body.classList.contains('present')&&!recording)exitPresent();
 });
+
+/* ---------- canvas framing ---------- */
+const FR={'9:16':[9,16],'16:9':[16,9],'1:1':[1,1],'4:5':[4,5]};
+let framing='16:9';
+function videoSize(){const [a,b]=FR[framing],q=+$('size').value;return a<b?[q,Math.round(q*b/a)]:[Math.round(q*a/b),q];}
+function sizeLabels(){
+  const keep=framing;
+  [...$('size').options].forEach(o=>{const q=+o.value,[a,b]=FR[keep];const w=a<b?q:Math.round(q*a/b),h=a<b?Math.round(q*b/a):q;o.textContent=`${o.value==='2160'?'4K':o.value+'p'} · ${w} × ${h}`;});
+}
+function layoutCanvas(){
+  const cw=$('cwrap'), cs=getComputedStyle(cw);
+  const W=cw.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight), H=cw.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+  const [a,b]=FR[framing]; let w=W,h=W*b/a; if(h>H){h=H;w=H*a/b;}
+  $('stage').style.setProperty('--cw',Math.floor(w)+'px'); $('stage').style.setProperty('--ch',Math.floor(h)+'px');
+}
+const roCanvas=new ResizeObserver(layoutCanvas); roCanvas.observe($('cwrap'));
+function setFraming(f,save=true){
+  if(!FR[f])return; framing=f; layoutCanvas(); sizeLabels();
+  $('framing').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.f===f));
+  if(save){try{localStorage.setItem('reflow-framing',f);}catch(e){}}
+}
+$('framing').innerHTML=Object.keys(FR).map(f=>`<button data-f="${f}">${f}</button>`).join('');
+$('framing').querySelectorAll('button').forEach(b=>b.onclick=()=>setFraming(b.dataset.f));
+try{const f=localStorage.getItem('reflow-framing');setFraming(f&&FR[f]?f:'16:9',false);}catch(e){setFraming('16:9',false);}
 
 /* ---------- background ---------- */
 const SW=['#e5e5e5','#ffffff','#1d1d1b','#d9d2c5','#c8d3cf','#f2e6d8'];
